@@ -111,19 +111,20 @@ export function RelatorioGeral({ transacoes }: RelatorioGeralProps) {
       ["Data", "Tipo", "Valor", "Descrição", "Categoria", "Responsável", "Método de Pagamento", "Observações"],
     ]
 
-    // Adicionar cada transação com todos os detalhes disponíveis
-    transacoesFiltradas.forEach((t) => {
-      dataToExport.push([
-        format(new Date(t.data), "dd/MM/yyyy"),
-        t.tipo === "entrada" ? "Entrada" : "Saída",
-        t.valor,
-        t.descricao,
-        t.categoria,
-        t.responsavel,
-        t.metodoPagamento || "Não especificado",
-        t.observacoes || "",
-      ])
-    })
+// Adicionar cada transação com todos os detalhes disponíveis
+transacoesFiltradas.forEach((t) => {
+  dataToExport.push([
+    format(new Date(t.data), "dd/MM/yyyy"),
+    t.tipo === "entrada" ? "Entrada" : "Saída",
+    t.valor.toString(), // Aqui convertemos o número para string
+    t.descricao,
+    t.categoria,
+    t.responsavel,
+    t.observacoes || "",
+  ]);
+});
+
+
 
     // Criar planilha
     const ws = XLSX.utils.aoa_to_sheet(dataToExport)
