@@ -155,7 +155,7 @@ export default function LoginPage() {
         <Card className="bg-black/40 backdrop-blur-sm border-gray-800 shadow-xl">
           <CardHeader className="pb-3">
             <CardTitle className="text-white text-xl">Entrar</CardTitle>
-            <CardDescription className="text-gray-300">Acesse sua conta para gerenciar suas finanças</CardDescription>
+            <CardDescription className="text-gray-300">Acesse sua conta para gerenciar</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">

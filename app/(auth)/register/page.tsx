@@ -150,7 +150,7 @@ export default function RegisterPage() {
               <form onSubmit={handleNextStep} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="name" className="text-white">
-                    Nome Completo
+                    Primeiro Nome
                   </Label>
                   <Input
                     id="name"
