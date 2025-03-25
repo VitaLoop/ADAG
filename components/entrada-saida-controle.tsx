@@ -228,8 +228,8 @@ export function EntradaSaidaControle({ transacoesIniciais, setTransacoes, isAdmi
       [""],
       [
         "Período:",
-        mesFiltro ? `Mês ${getNomeMes(Number.parseInt(mesFiltro))}` : "Todos os meses",
-        anoFiltro || new Date().getFullYear(),
+mesFiltro ? `Mês ${getNomeMes(mesFiltro)}` : "Todos os meses",
+anoFiltro || new Date().getFullYear(),
       ],
       ["Data de Exportação:", format(new Date(), "dd/MM/yyyy HH:mm", { locale: pt })],
       [""],
@@ -279,9 +279,8 @@ export function EntradaSaidaControle({ transacoesIniciais, setTransacoes, isAdmi
     XLSX.utils.book_append_sheet(wb, ws, "Transações")
 
     // Exportar arquivo
-    const fileName = `Transacoes_${mesFiltro ? getNomeMes(Number.parseInt(mesFiltro)) : "Todos"}_${anoFiltro || new Date().getFullYear()}.xlsx`
+    const fileName = `Transacoes_${mesFiltro ? getNomeMes(mesFiltro.toString()) : "Todos"}_${anoFiltro || new Date().getFullYear()}.xlsx`;
     XLSX.writeFile(wb, fileName)
-
     toast({
       title: "Excel exportado",
       description: `O relatório foi exportado como ${fileName} com todos os detalhes.`,
@@ -336,7 +335,10 @@ export function EntradaSaidaControle({ transacoesIniciais, setTransacoes, isAdmi
     })
   }
 
-  const getNomeMes = (numeroMes: string) => {
+  const getNomeMes = (numeroMes: string | number): string => {
+    // Caso número, converte para string
+    const mes = typeof numeroMes === 'number' ? numeroMes.toString() : numeroMes;
+  
     const meses = [
       "Janeiro",
       "Fevereiro",
@@ -350,9 +352,11 @@ export function EntradaSaidaControle({ transacoesIniciais, setTransacoes, isAdmi
       "Outubro",
       "Novembro",
       "Dezembro",
-    ]
-    return meses[Number.parseInt(numeroMes) - 1]
+    ];
+    
+    return meses[Number.parseInt(mes) - 1]; // Converte para número para pegar o índice
   }
+  
 
   const limparFiltros = () => {
     setSearchTerm("")
