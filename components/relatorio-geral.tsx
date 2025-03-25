@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { PrintLayout } from "@/components/print-layout"
 import {
   Printer,
@@ -71,6 +71,25 @@ const COR_ENTRADA = "#10b981" // emerald-500
 const COR_SAIDA = "#ef4444" // red-500
 
 export function RelatorioGeral({ transacoes }: RelatorioGeralProps) {
+  // Adicionar no início do componente, após as declarações de estado
+  const [isMobile, setIsMobile] = useState(false)
+
+  // Detectar se é dispositivo móvel
+  useEffect(() => {
+    const checkIfMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+
+    // Verificar inicialmente
+    checkIfMobile()
+
+    // Adicionar listener para redimensionamento
+    window.addEventListener("resize", checkIfMobile)
+
+    // Limpar listener
+    return () => window.removeEventListener("resize", checkIfMobile)
+  }, [])
+
   const [anoFiltro, setAnoFiltro] = useState<string>(new Date().getFullYear().toString())
   const [mesFiltro, setMesFiltro] = useState<string>("todos")
   const [dataInicioFiltro, setDataInicioFiltro] = useState<Date | undefined>(undefined)
@@ -439,20 +458,25 @@ export function RelatorioGeral({ transacoes }: RelatorioGeralProps) {
       )
     }
 
+    // Definir um raio fixo para o gráfico de pizza baseado no tamanho da tela
+    const pieRadius = isMobile ? 100 : 150
+
     return (
-      <div className="h-96">
+      <div className="h-[300px] md:h-96">
         <ResponsiveContainer width="100%" height="100%">
           <RechartsPieChart>
             <Pie
               data={dados}
               cx="50%"
               cy="50%"
-              labelLine={true}
-              outerRadius={150}
+              labelLine={false}
+              outerRadius={pieRadius}
               fill="#8884d8"
               dataKey="value"
               nameKey="name"
-              label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}
+              label={({ name, percent }) =>
+                `${name.length > 10 ? name.substring(0, 10) + "..." : name}: ${(percent * 100).toFixed(0)}%`
+              }
             >
               {dados.map((entry, index) => {
                 // Usar cores específicas para entrada/saída ou cores do array para categorias
@@ -466,7 +490,7 @@ export function RelatorioGeral({ transacoes }: RelatorioGeralProps) {
                 return <Cell key={`cell-${index}`} fill={cor} />
               })}
             </Pie>
-            <Legend />
+            <Legend layout="horizontal" verticalAlign="bottom" align="center" />
             <RechartsTooltip
               formatter={(value: number) => formatCurrency(value)}
               labelFormatter={(label) => `Categoria: ${label}`}
@@ -491,27 +515,39 @@ export function RelatorioGeral({ transacoes }: RelatorioGeralProps) {
       )
     }
 
+    // Limitar a 5 categorias em dispositivos móveis para melhor visualização
+    const dadosLimitados = isMobile ? dadosGraficoBarras.slice(0, 5) : dadosGraficoBarras
+
     return (
-      <div className="h-96">
+      <div className="h-[300px] md:h-96">
         <ResponsiveContainer width="100%" height="100%">
           <RechartsBarChart
-            data={dadosGraficoBarras}
+            data={dadosLimitados}
             margin={{
               top: 20,
-              right: 30,
-              left: 20,
-              bottom: 100,
+              right: 20,
+              left: 0,
+              bottom: 60,
             }}
+            barSize={isMobile ? 20 : 30}
           >
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} interval={0} />
-            <YAxis />
+            <XAxis
+              dataKey="name"
+              angle={-45}
+              textAnchor="end"
+              height={60}
+              interval={0}
+              tick={{ fontSize: isMobile ? 10 : 12 }}
+              tickFormatter={(value) => (value.length > 8 ? value.substring(0, 8) + "..." : value)}
+            />
+            <YAxis tick={{ fontSize: isMobile ? 10 : 12 }} />
             <RechartsTooltip
               formatter={(value: number) => formatCurrency(value)}
               labelFormatter={(label) => `Categoria: ${label}`}
             />
             <Bar dataKey="value" name="Valor">
-              {dadosGraficoBarras.map((entry, index) => (
+              {dadosLimitados.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={entry.tipo === "entrada" ? COR_ENTRADA : COR_SAIDA} />
               ))}
             </Bar>
@@ -536,28 +572,37 @@ export function RelatorioGeral({ transacoes }: RelatorioGeralProps) {
     }
 
     return (
-      <div className="h-96">
+      <div className="h-[300px] md:h-96">
         <ResponsiveContainer width="100%" height="100%">
           <RechartsLineChart
             data={dadosGraficoLinha}
             margin={{
               top: 20,
-              right: 30,
-              left: 20,
+              right: 20,
+              left: 0,
               bottom: 10,
             }}
           >
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" />
-            <YAxis />
+            <XAxis
+              dataKey="name"
+              tick={{ fontSize: isMobile ? 10 : 12 }}
+              tickFormatter={(value) => (isMobile ? value.substring(0, 3) : value)}
+            />
+            <YAxis tick={{ fontSize: isMobile ? 10 : 12 }} />
             <RechartsTooltip formatter={(value: number) => formatCurrency(value)} />
-            <Legend />
+            <Legend
+              layout="horizontal"
+              verticalAlign="bottom"
+              align="center"
+              wrapperStyle={{ fontSize: isMobile ? 10 : 12 }}
+            />
             <Line
               type="monotone"
               dataKey="entradas"
               name="Entradas"
               stroke={COR_ENTRADA}
-              activeDot={{ r: 8 }}
+              activeDot={{ r: 6 }}
               strokeWidth={2}
             />
             <Line
@@ -565,10 +610,10 @@ export function RelatorioGeral({ transacoes }: RelatorioGeralProps) {
               dataKey="saidas"
               name="Saídas"
               stroke={COR_SAIDA}
-              activeDot={{ r: 8 }}
+              activeDot={{ r: 6 }}
               strokeWidth={2}
             />
-            <Line type="monotone" dataKey="saldo" name="Saldo" stroke="#3b82f6" activeDot={{ r: 8 }} strokeWidth={2} />
+            <Line type="monotone" dataKey="saldo" name="Saldo" stroke="#3b82f6" activeDot={{ r: 6 }} strokeWidth={2} />
           </RechartsLineChart>
         </ResponsiveContainer>
       </div>
@@ -577,33 +622,33 @@ export function RelatorioGeral({ transacoes }: RelatorioGeralProps) {
 
   return (
     <PrintLayout title="Relatório Detalhado">
-      <div className="space-y-6">
+      <div className="space-y-3 md:space-y-6">
         {/* Cabeçalho com título e botões de ação */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex flex-col justify-between items-start gap-4">
           <div>
-            <h2 className="text-lg md:text-xl font-bold">Relatório Detalhado</h2>
-            <p className="text-xs md:text-sm text-muted-foreground">Exporte dados detalhados de todas as transações</p>
+            <h2 className="text-lg font-bold">Relatório Detalhado</h2>
+            <p className="text-xs text-muted-foreground">Exporte dados detalhados de todas as transações</p>
           </div>
-          <div className="flex gap-2 w-full sm:w-auto">
+          <div className="flex gap-2 w-full">
             <Button
               onClick={handleExportExcel}
-              className="print:hidden h-9 px-2 md:px-3 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-800 text-white"
+              className="print:hidden flex-1 h-9 px-2 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-800 text-white"
             >
-              <FileDown className="h-4 w-4 md:mr-2" />
-              <span className="hidden md:inline">Excel</span>
+              <FileDown className="h-4 w-4 mr-2" />
+              <span>Excel</span>
             </Button>
 
             <Button
               onClick={handleExportPDF}
-              className="print:hidden h-9 px-2 md:px-3 bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800 text-white"
+              className="print:hidden flex-1 h-9 px-2 bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800 text-white"
             >
-              <FileDown className="h-4 w-4 md:mr-2" />
-              <span className="hidden md:inline">PDF</span>
+              <FileDown className="h-4 w-4 mr-2" />
+              <span>PDF</span>
             </Button>
 
-            <Button onClick={handlePrint} className="print:hidden h-9 px-2 md:px-3">
-              <Printer className="h-4 w-4 md:mr-2" />
-              <span className="hidden md:inline">Imprimir</span>
+            <Button onClick={handlePrint} className="print:hidden flex-1 h-9 px-2">
+              <Printer className="h-4 w-4 mr-2" />
+              <span>Imprimir</span>
             </Button>
           </div>
         </div>
@@ -622,7 +667,7 @@ export function RelatorioGeral({ transacoes }: RelatorioGeralProps) {
             </div>
           </CardHeader>
           <CardContent className="pt-4 pb-4 px-4 bg-white dark:bg-gray-900">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               <div className="relative">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -633,33 +678,35 @@ export function RelatorioGeral({ transacoes }: RelatorioGeralProps) {
                 />
               </div>
 
-              <Select value={anoFiltro} onValueChange={setAnoFiltro}>
-                <SelectTrigger id="anoFiltro" className="h-10">
-                  <SelectValue placeholder="Selecionar ano" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos os anos</SelectItem>
-                  {anos.map((ano) => (
-                    <SelectItem key={ano} value={ano}>
-                      {ano}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="grid grid-cols-2 gap-2">
+                <Select value={anoFiltro} onValueChange={setAnoFiltro}>
+                  <SelectTrigger id="anoFiltro" className="h-10">
+                    <SelectValue placeholder="Ano" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos os anos</SelectItem>
+                    {anos.map((ano) => (
+                      <SelectItem key={ano} value={ano}>
+                        {ano}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
-              <Select value={mesFiltro} onValueChange={setMesFiltro}>
-                <SelectTrigger id="mesFiltro" className="h-10">
-                  <SelectValue placeholder="Selecionar mês" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos os meses</SelectItem>
-                  {Array.from({ length: 12 }, (_, i) => i + 1).map((mes) => (
-                    <SelectItem key={mes} value={mes.toString()}>
-                      {getNomeMes(mes)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <Select value={mesFiltro} onValueChange={setMesFiltro}>
+                  <SelectTrigger id="mesFiltro" className="h-10">
+                    <SelectValue placeholder="Mês" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos os meses</SelectItem>
+                    {Array.from({ length: 12 }, (_, i) => i + 1).map((mes) => (
+                      <SelectItem key={mes} value={mes.toString()}>
+                        {getNomeMes(mes)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
@@ -729,12 +776,12 @@ export function RelatorioGeral({ transacoes }: RelatorioGeralProps) {
         </Card>
 
         {/* Resumo simples */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-2 md:gap-4">
           <Card className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
-            <CardContent className="p-4">
+            <CardContent className="p-2 md:p-4">
               <div className="text-center">
-                <p className="text-sm font-medium text-green-800 dark:text-green-300">Total de Entradas</p>
-                <p className="text-2xl font-bold text-green-700 dark:text-green-400 mt-1">
+                <p className="text-xs md:text-sm font-medium text-green-800 dark:text-green-300">Entradas</p>
+                <p className="text-base md:text-2xl font-bold text-green-700 dark:text-green-400 mt-1">
                   {formatCurrency(totais.entradas)}
                 </p>
               </div>
@@ -742,10 +789,10 @@ export function RelatorioGeral({ transacoes }: RelatorioGeralProps) {
           </Card>
 
           <Card className="bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800">
-            <CardContent className="p-4">
+            <CardContent className="p-2 md:p-4">
               <div className="text-center">
-                <p className="text-sm font-medium text-red-800 dark:text-red-300">Total de Saídas</p>
-                <p className="text-2xl font-bold text-red-700 dark:text-red-400 mt-1">
+                <p className="text-xs md:text-sm font-medium text-red-800 dark:text-red-300">Saídas</p>
+                <p className="text-base md:text-2xl font-bold text-red-700 dark:text-red-400 mt-1">
                   {formatCurrency(totais.saidas)}
                 </p>
               </div>
@@ -753,10 +800,10 @@ export function RelatorioGeral({ transacoes }: RelatorioGeralProps) {
           </Card>
 
           <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
-            <CardContent className="p-4">
+            <CardContent className="p-2 md:p-4">
               <div className="text-center">
-                <p className="text-sm font-medium text-blue-800 dark:text-blue-300">Saldo</p>
-                <p className="text-2xl font-bold text-blue-700 dark:text-blue-400 mt-1">
+                <p className="text-xs md:text-sm font-medium text-blue-800 dark:text-blue-300">Saldo</p>
+                <p className="text-base md:text-2xl font-bold text-blue-700 dark:text-blue-400 mt-1">
                   {formatCurrency(totais.saldo)}
                 </p>
               </div>
@@ -782,12 +829,16 @@ export function RelatorioGeral({ transacoes }: RelatorioGeralProps) {
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-muted/50 dark:bg-gray-800/50 hover:bg-muted/70 dark:hover:bg-gray-800/70">
-                        <TableHead className="font-semibold">Data</TableHead>
-                        <TableHead className="font-semibold">Tipo</TableHead>
-                        <TableHead className="font-semibold">Descrição</TableHead>
-                        <TableHead className="font-semibold">Categoria</TableHead>
-                        <TableHead className="font-semibold">Responsável</TableHead>
-                        <TableHead className="text-right font-semibold">Valor</TableHead>
+                        <TableHead className="font-semibold text-xs md:text-sm">Data</TableHead>
+                        <TableHead className="font-semibold text-xs md:text-sm">Tipo</TableHead>
+                        <TableHead className="font-semibold text-xs md:text-sm">Descrição</TableHead>
+                        <TableHead className="font-semibold text-xs md:text-sm hidden md:table-cell">
+                          Categoria
+                        </TableHead>
+                        <TableHead className="font-semibold text-xs md:text-sm hidden md:table-cell">
+                          Responsável
+                        </TableHead>
+                        <TableHead className="text-right font-semibold text-xs md:text-sm">Valor</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -797,33 +848,39 @@ export function RelatorioGeral({ transacoes }: RelatorioGeralProps) {
                             key={transacao.id}
                             className="border-b border-border/50 dark:border-gray-700/50 hover:bg-muted/30 dark:hover:bg-gray-800/30 transition-colors"
                           >
-                            <TableCell>{format(new Date(transacao.data), "dd/MM/yyyy")}</TableCell>
-                            <TableCell>
+                            <TableCell className="text-xs md:text-sm py-2">
+                              {format(new Date(transacao.data), "dd/MM/yy")}
+                            </TableCell>
+                            <TableCell className="py-2">
                               {transacao.tipo === "entrada" ? (
                                 <Badge
                                   variant="outline"
-                                  className="bg-green-50 text-green-700 dark:bg-green-900 dark:text-green-300 border-green-200 dark:border-green-800"
+                                  className="bg-green-50 text-green-700 dark:bg-green-900 dark:text-green-300 border-green-200 dark:border-green-800 text-[10px] md:text-xs px-1 md:px-2"
                                 >
                                   Entrada
                                 </Badge>
                               ) : (
                                 <Badge
                                   variant="outline"
-                                  className="bg-red-50 text-red-700 dark:bg-red-900 dark:text-red-300 border-red-200 dark:border-red-800"
+                                  className="bg-red-50 text-red-700 dark:bg-red-900 dark:text-red-300 border-red-200 dark:border-red-800 text-[10px] md:text-xs px-1 md:px-2"
                                 >
                                   Saída
                                 </Badge>
                               )}
                             </TableCell>
-                            <TableCell className="font-medium">{transacao.descricao}</TableCell>
-                            <TableCell>
-                              <Badge variant="secondary" className="rounded-full font-normal">
+                            <TableCell className="font-medium text-xs md:text-sm py-2 max-w-[100px] md:max-w-none truncate">
+                              {transacao.descricao}
+                            </TableCell>
+                            <TableCell className="hidden md:table-cell py-2">
+                              <Badge variant="secondary" className="rounded-full font-normal text-xs">
                                 {transacao.categoria}
                               </Badge>
                             </TableCell>
-                            <TableCell>{transacao.responsavel}</TableCell>
+                            <TableCell className="hidden md:table-cell text-xs md:text-sm py-2">
+                              {transacao.responsavel}
+                            </TableCell>
                             <TableCell
-                              className={`text-right font-medium ${
+                              className={`text-right font-medium text-xs md:text-sm py-2 ${
                                 transacao.tipo === "entrada"
                                   ? "text-green-600 dark:text-green-400"
                                   : "text-red-600 dark:text-red-400"
@@ -835,7 +892,7 @@ export function RelatorioGeral({ transacoes }: RelatorioGeralProps) {
                         ))
                       ) : (
                         <TableRow>
-                          <TableCell colSpan={6} className="h-24 text-center">
+                          <TableCell colSpan={6} className="h-24 text-center text-xs md:text-sm">
                             Nenhuma transação encontrada para o período selecionado.
                           </TableCell>
                         </TableRow>
@@ -890,28 +947,28 @@ export function RelatorioGeral({ transacoes }: RelatorioGeralProps) {
                     variant={tipoGrafico === "categoria" ? "default" : "outline"}
                     size="sm"
                     onClick={() => setTipoGrafico("categoria")}
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-1 text-xs h-8 px-2"
                   >
-                    <PieChart className="h-4 w-4" />
-                    Por Categoria
+                    <PieChart className="h-3 w-3" />
+                    <span className="hidden xs:inline">Por Categoria</span>
                   </Button>
                   <Button
                     variant={tipoGrafico === "tipoTransacao" ? "default" : "outline"}
                     size="sm"
                     onClick={() => setTipoGrafico("tipoTransacao")}
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-1 text-xs h-8 px-2"
                   >
-                    <PieChart className="h-4 w-4" />
-                    Entrada vs Saída
+                    <PieChart className="h-3 w-3" />
+                    <span className="hidden xs:inline">Entrada vs Saída</span>
                   </Button>
                   <Button
                     variant={tipoGrafico === "mensal" ? "default" : "outline"}
                     size="sm"
                     onClick={() => setTipoGrafico("mensal")}
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-1 text-xs h-8 px-2"
                   >
-                    <LineChart className="h-4 w-4" />
-                    Evolução Mensal
+                    <LineChart className="h-3 w-3" />
+                    <span className="hidden xs:inline">Evolução Mensal</span>
                   </Button>
                 </div>
               </CardContent>
@@ -941,3 +998,4 @@ export function RelatorioGeral({ transacoes }: RelatorioGeralProps) {
     </PrintLayout>
   )
 }
+
