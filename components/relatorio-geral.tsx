@@ -550,7 +550,7 @@ transacoesFiltradas.forEach((t) => {
           <p>
             Use os botões acima para exportar este relatório detalhado em Excel ou PDF.
             <br />
-            Os relatórios exportados contêm informações adicionais como observações e métodos de pagamento.
+            Os relatórios exportados contêm informações adicionais como observações e detalhes.
           </p>
         </div>
       </div>
