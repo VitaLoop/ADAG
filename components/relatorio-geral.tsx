@@ -174,6 +174,22 @@ export function RelatorioGeral({ transacoes }: RelatorioGeralProps) {
       }
     }
 
+    // Lista de nomes de meses para ordenação posterior
+    const mesesNomes = [
+      "Janeiro",
+      "Fevereiro",
+      "Março",
+      "Abril",
+      "Maio",
+      "Junho",
+      "Julho",
+      "Agosto",
+      "Setembro",
+      "Outubro",
+      "Novembro",
+      "Dezembro",
+    ]
+
     transacoesFiltradas.forEach((transacao) => {
       const data = new Date(transacao.data)
       const ano = data.getFullYear()
@@ -195,7 +211,7 @@ export function RelatorioGeral({ transacoes }: RelatorioGeralProps) {
       .map(([chave, valores]) => {
         const [ano, mes] = chave.split("-").map(Number)
         return {
-          name: getNomeMes(mes),
+          name: mesesNomes[mes - 1],
           entradas: valores.entradas,
           saidas: valores.saidas,
           saldo: valores.entradas - valores.saidas,
@@ -203,21 +219,7 @@ export function RelatorioGeral({ transacoes }: RelatorioGeralProps) {
       })
       .sort((a, b) => {
         // Ordenar por mês
-        const meses = [
-          "Janeiro",
-          "Fevereiro",
-          "Março",
-          "Abril",
-          "Maio",
-          "Junho",
-          "Julho",
-          "Agosto",
-          "Setembro",
-          "Outubro",
-          "Novembro",
-          "Dezembro",
-        ]
-        return meses.indexOf(a.name) - meses.indexOf(b.name)
+        return mesesNomes.indexOf(a.name) - mesesNomes.indexOf(b.name)
       })
   }, [transacoesFiltradas, anoFiltro])
 
